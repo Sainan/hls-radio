@@ -45,6 +45,7 @@ do
 end
 
 local sched = new scheduler()
+sched.yieldfunc = || -> os.sleep(1000)
 for stations as station do
 	local slug = station.slug
 
@@ -72,7 +73,7 @@ for stations as station do
 					radio.track = stingers[math.random(1, #stingers)]
 				end
 			else
-				coroutine.sleep(1000)
+				coroutine.yield()
 			end
 		end
 	end)

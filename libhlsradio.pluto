@@ -67,10 +67,11 @@ export class Radio
 			++self.segment_i
 
 			for self.sequence as entry do
-				if os.unixseconds() > entry.ends_at then
-					self.sequence:remove(1)
-					++self.sequence_offset
+				if os.unixseconds() <= entry.ends_at then
+					break
 				end
+				self.sequence:remove(1)
+				++self.sequence_offset
 			end
 
 			local hls = "#EXTM3U\n"..
