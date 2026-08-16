@@ -68,7 +68,10 @@ for stations as station do
 			if radio:tick() then
 				local is_stinger = radio.track.segments[1]?.path?:startswith(slug.."/stingers/")
 				if is_stinger then
-					radio.track = songs[math.random(1, #songs)]
+					repeat
+						radio.track = songs[math.random(1, #songs)]
+					until radio.track ~= radio.last_song
+					radio.last_song = radio.track
 				else
 					radio.track = stingers[math.random(1, #stingers)]
 				end
