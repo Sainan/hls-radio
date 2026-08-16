@@ -7,7 +7,7 @@ local stations = {
 	{ slug = "block-party", name = "Horizon Block Party", },
 	{ slug = "xs", name = "Horizon XS", },
 	{ slug = "hospital", name = "Hospital Records", },
-	{ slug = "gacha-city", name = "Gacha City"--[[Radio]], },
+	{ slug = "gacha-city", name = "Gacha City Radio", },
 	{ slug = "sub-pop", name = "Sub Pop Records", },
 	{ slug = "wave", name = "Horizon Wave", },
 	{ slug = "opus", name = "Horizon Opus", },
@@ -17,13 +17,14 @@ do
 	local fh <close> = io.open("index.html", "w")
 	fh:write("<link rel=\"stylesheet\" href=\"https://calamity-inc.github.io/Silver/base.css\">")
 	fh:write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
+	fh:write("<p>Bootleg FH6 Radios:</o>")
 	fh:write("<ul>\n")
 	for stations as station do
 		io.contents(
 			station.slug..".html",
-			io.contents("listen.tmpl.html"):replace("{{radio.name}}", station.name):replace("{{radio.slug}}", station.slug)
+			io.contents("listen.tmpl.html"):replace("{{radio.name}}", station.name:replace(" Radio", "")):replace("{{radio.slug}}", station.slug)
 		)
-		fh:write("\t<li><a href=\""..station.slug..".html\">Bootleg FH6 "..station.name.." Radio</a></li>\n")
+		fh:write("\t<li><a href=\""..station.slug..".html\">"..station.name.."</a></li>\n")
 	end
 	fh:write("</ul>")
 end
