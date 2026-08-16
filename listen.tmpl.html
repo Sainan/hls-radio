@@ -2,7 +2,7 @@
 
 <h1>Bootleg FH6 {{radio.name}} Radio</h1>
 <audio id="radio" controls></audio>
-<p>or tune in with a non-browser player: <code>https://radio.goddess.sh/{{radio.slug}}.m3u8</code></p>
+<p>or tune in with a non-browser player: <code>https://radio.goddess.sh/{{radio.slug}}.m3u8</code> (<a href="#" onclick="event.preventDefault();downloadM3U();">Download</a>)</p>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
@@ -17,5 +17,22 @@
 		const hls = new Hls();
 		hls.loadSource(url);
 		hls.attachMedia(audio);
+	}
+
+	function downloadM3U()
+	{
+		const m3u = "#EXTM3U\n#EXTINF:-1,Bootleg FH6 {{radio.name}} Radio\nhttps://radio.goddess.sh/{{radio.slug}}.m3u8";
+
+		const blob = new Blob([m3u], { type: "application/vnd.apple.mpegurl" });
+		const url = URL.createObjectURL(blob);
+
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = `{{radio.slug}}.m3u8`;
+		document.body.appendChild(link);
+		link.click();
+		link.remove();
+
+		URL.revokeObjectURL(url);
 	}
 </script>
