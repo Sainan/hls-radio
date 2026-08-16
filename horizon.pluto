@@ -18,26 +18,9 @@ do
 	fh:write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
 	fh:write("<ul>\n")
 	for stations as station do
-		io.contents(station.slug..".html",
-			"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"..
-			"<h1>Bootleg FH6 "..station.name.." Radio</h1>\n"..
-			"<audio id=\"radio\" controls></audio>\n"..
-			"<p>or tune in with a non-browser player: <code>https://radio.goddess.sh/"..station.slug..".m3u8</code></p>\n"..
-			"<script src=\"https://cdn.jsdelivr.net/npm/hls.js@latest\"></script>\n"..
-			"<script>\n"..
-			"\tconst audio = document.getElementById(\"radio\");\n"..
-			"\tconst url = \""..station.slug..".m3u8\";\n"..
-			"\tif (audio.canPlayType(\"application/vnd.apple.mpegurl\"))\n"..
-			"\t{\n"..
-			"\t	audio.src = url;\n"..
-			"\t}\n"..
-			"\telse\n"..
-			"\t{\n"..
-			"\t	const hls = new Hls();\n"..
-			"\t	hls.loadSource(url);\n"..
-			"\t	hls.attachMedia(audio);\n"..
-			"\t}\n"..
-			"</script>"
+		io.contents(
+			station.slug..".html",
+			io.contents("listen.tmpl.html"):replace("{{radio.name}}", station.name):replace("{{radio.slug}}", station.slug)
 		)
 		fh:write("\t<li><a href=\""..station.slug..".html\">Bootleg FH6 "..station.name.." Radio</a></li>\n")
 	end

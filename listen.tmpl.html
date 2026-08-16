@@ -1,0 +1,21 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<h1>Bootleg FH6 {{radio.name}} Radio</h1>
+<audio id="radio" controls></audio>
+<p>or tune in with a non-browser player: <code>https://radio.goddess.sh/{{radio.slug}}.m3u8</code></p>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+	const audio = document.getElementById("radio");
+	const url = "{{radio.slug}}.m3u8";
+	if (audio.canPlayType("application/vnd.apple.mpegurl"))
+	{
+		audio.src = url;
+	}
+	else
+	{
+		const hls = new Hls();
+		hls.loadSource(url);
+		hls.attachMedia(audio);
+	}
+</script>
