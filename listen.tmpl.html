@@ -4,7 +4,6 @@
 <audio id="radio" controls></audio>
 <p>or tune in with a non-browser player: <code>https://radio.goddess.sh/{{radio.slug}}.m3u8</code> (<a href="#" onclick="event.preventDefault();downloadM3U();">Download</a>)</p>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script>
 	const audio = document.getElementById("radio");
 	const url = "{{radio.slug}}.m3u8";
@@ -14,9 +13,15 @@
 	}
 	else
 	{
-		const hls = new Hls();
-		hls.loadSource(url);
-		hls.attachMedia(audio);
+		const script = document.createElement("script");
+		script.onload = function()
+		{
+			const hls = new Hls();
+			hls.loadSource(url);
+			hls.attachMedia(audio);
+		};
+		script.src = "https://cdn.jsdelivr.net/npm/hls.js@latest";
+		document.body.appendChild(script);
 	}
 
 	function downloadM3U()
