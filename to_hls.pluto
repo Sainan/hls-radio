@@ -1,0 +1,9 @@
+for io.listdir(".") as file do
+	if io.isfile(file) and not file:endswith(".pluto") then
+		local name = file:sub(3, -5)
+		print(name)
+		io.mkdir(name)
+		os.execute("ffmpeg -i \""..file.."\" -map 0 -map_metadata -1 -c mp3 -f hls -hls_time 10 -hls_list_size 1000000 \""..name.."/.m3u8\"")
+		-- '-c mp3' can be replaced with '-c copy' if the audio is already MP3 or AAC coded
+	end
+end

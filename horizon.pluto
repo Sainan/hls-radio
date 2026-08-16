@@ -1,0 +1,80 @@
+local scheduler = require "pluto:scheduler"
+local { get_media, Radio } = require "libhlsradio"
+
+local stations = {
+	{ slug = "pulse", name = "Horizon Pulse", },
+	{ slug = "bass-arena", name = "Horizon Bass Arena", },
+	{ slug = "block-party", name = "Horizon Block Party", },
+	{ slug = "xs", name = "Horizon XS", },
+	{ slug = "hospital", name = "Hospital Records", },
+	{ slug = "gacha-city", name = "Gacha City"--[[Radio]], },
+	{ slug = "sub-pop", name = "Sub Pop Records", },
+	{ slug = "wave", name = "Horizon Wave", },
+	{ slug = "opus", name = "Horizon Opus", },
+}
+
+do
+	local fh <close> = io.open("index.html", "w")
+	fh:write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
+	fh:write("<ul>\n")
+	for stations as station do
+		io.contents(station.slug..".html",
+			"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"..
+			"<h1>Bootleg FH6 "..station.name.." Radio</h1>\n"..
+			"<audio id=\"radio\" controls></audio>\n"..
+			"<p>or tune in with a non-browser player: <code>https://radio.goddess.sh/"..station.slug..".m3u8</code></p>\n"..
+			"<script src=\"https://cdn.jsdelivr.net/npm/hls.js@latest\"></script>\n"..
+			"<script>\n"..
+			"\tconst audio = document.getElementById(\"radio\");\n"..
+			"\tconst url = \""..station.slug..".m3u8\";\n"..
+			"\tif (audio.canPlayType(\"application/vnd.apple.mpegurl\"))\n"..
+			"\t{\n"..
+			"\t	audio.src = url;\n"..
+			"\t}\n"..
+			"\telse\n"..
+			"\t{\n"..
+			"\t	const hls = new Hls();\n"..
+			"\t	hls.loadSource(url);\n"..
+			"\t	hls.attachMedia(audio);\n"..
+			"\t}\n"..
+			"</script>"
+		)
+		fh:write("\t<li><a href=\""..station.slug..".html\">Bootleg FH6 "..station.name.." Radio</a></li>\n")
+	end
+	fh:write("</ul>")
+end
+
+local sched = new scheduler()
+for stations as station do
+	local slug = station.slug
+
+	local stingers = {}
+	for io.scandir(slug .. "/stingers") as file do
+		if io.isdir(file) do
+			stingers:insert(get_media(file))
+		end
+	end
+	local songs = {}
+	for io.scandir(slug .. "/songs") as file do
+		if io.isdir(file) do
+			songs:insert(get_media(file))
+		end
+	end
+
+	local radio = new Radio(slug .. ".m3u8")
+	sched:add(function()
+		while true do
+			if radio:tick() then
+				local is_stinger = radio.track.segments[1]?.path?:startswith(slug.."/stingers/")
+				if is_stinger then
+					radio.track = songs[math.random(1, #songs)]
+				else
+					radio.track = stingers[math.random(1, #stingers)]
+				end
+			else
+				coroutine.sleep(1000)
+			end
+		end
+	end)
+end
+sched:run()

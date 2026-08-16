@@ -1,0 +1,92 @@
+export function get_media(file)
+	file = file:replace("\\", "/")
+	local playlist = io.contents(file.."/.m3u8")
+	local segments = {}
+	for playlist:replace(",\n", ","):split("\n") as line do
+		if line:startswith("#EXTINF:") then
+			local [duration, segment] = line:sub(9):split(",")
+			segments:insert({ path = file .. "/" .. segment, duration = tonumber(duration) })
+		end
+	end
+	segments[1].discontinuity = true
+	return { segments = segments }
+end
+
+export function time_to_iso8601(t)
+	return os.date("!%Y-%m-%dT%H:%M:%S", t // 1)..tostring(t % 1):sub(2).."Z"
+end
+
+export function iso8601_to_time(str, offset)
+	local year, month, day, hour, min, sec = string.match(str, "(%d%d%d%d)%-(%d%d)%-(%d%d)T(%d%d):(%d%d):(%d%d)")
+	local t = os.time($object(year, month, day, hour, min, sec))
+	if fraction := string.match(str, "%d%d%d%d%-%d%d%-%d%dT%d%d:%d%d:%d%d%.(%d+)") then
+		t += tonumber("0."..fraction)
+	end
+	if not offset then
+		offset = (os.unixseconds() - iso8601_to_time(time_to_iso8601(os.unixseconds()), 0))
+	end
+	return t + offset
+end
+
+export class Radio
+	function __construct(public m3u8file)
+		self.sequence = {}
+		self.sequence_offset = 0
+		self.end_of_content = os.unixseconds()
+		self.segment_i = 1
+		self.track = { segments = {} }
+
+		-- Check resume
+		if io.exists(m3u8file) then
+			for line in io.lines(m3u8file) do
+				if line:startswith("#EXT-X-MEDIA-SEQUENCE:") then
+					self.sequence_offset = tonumber(line:sub(23))
+				elseif line:startswith("#EXT-X-PROGRAM-DATE-TIME:") then
+					self.end_of_content = iso8601_to_time(line:sub(26))
+				elseif line:endswith(".ts") then
+					local arr = line:split("/")
+					self.segment_i = tonumber(arr:remove():sub(1, -4)) + 1 -- (convert 0-index to 1-index)
+					self.track = get_media(arr:concat("/"))
+					break
+				end
+			end
+		end
+	end
+
+	-- If 'true' is returned, please update the 'track' field.
+	-- If 'false' is returned, feel free to sleep for a bit.
+	function tick()
+		while self.end_of_content < os.unixseconds() + 30 do
+			if self.segment_i > #self.track.segments then
+				self.segment_i = 1
+				return true
+			end
+			local starts_at = self.end_of_content
+			self.end_of_content += self.track.segments[self.segment_i].duration
+			self.sequence:insert({ segment = self.track.segments[self.segment_i], starts_at = starts_at, ends_at = self.end_of_content })
+			++self.segment_i
+
+			for self.sequence as entry do
+				if os.unixseconds() > entry.ends_at then
+					self.sequence:remove(1)
+					++self.sequence_offset
+				end
+			end
+
+			local hls = "#EXTM3U\n"..
+				"#EXT-X-VERSION:3\n"..
+				"#EXT-X-INDEPENDENT-SEGMENTS\n"..
+				"#EXT-X-TARGETDURATION:10\n".. -- The interval (in seconds) that the playlist will be fetched at.
+				"#EXT-X-MEDIA-SEQUENCE:"..self.sequence_offset.."\n"
+			for self.sequence as entry do
+				hls ..= "#EXT-X-PROGRAM-DATE-TIME:"..time_to_iso8601(entry.starts_at).."\n"
+				if entry.segment.discontinuity then
+					hls ..= "#EXT-X-DISCONTINUITY\n"
+				end
+				hls ..= "#EXTINF:"..entry.segment.duration..",\n"..entry.segment.path.."\n"
+			end
+			io.contents(self.m3u8file, hls)
+		end
+		return false
+	end
+end
