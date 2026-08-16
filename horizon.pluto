@@ -15,6 +15,7 @@ local stations = {
 
 do
 	local fh <close> = io.open("index.html", "w")
+	fh:write("<link rel=\"stylesheet\" href=\"https://calamity-inc.github.io/Silver/base.css\">")
 	fh:write("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n")
 	fh:write("<ul>\n")
 	for stations as station do
