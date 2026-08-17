@@ -48,6 +48,7 @@ for stations as station do
 	end
 
 	local radio = new Radio(slug .. ".m3u8")
+	radio.recent_songs = {}
 	sched:add(function()
 		while true do
 			if radio:tick() then
@@ -55,8 +56,11 @@ for stations as station do
 				if is_stinger then
 					repeat
 						radio.track = songs[math.random(1, #songs)]
-					until radio.track ~= radio.last_song
-					radio.last_song = radio.track
+					until not (radio.track in radio.recent_songs)
+					radio.recent_songs:insert(radio.track)
+					if #radio.recent_songs > 10 then
+						radio.recent_songs:remove(1)
+					end
 				else
 					radio.track = stingers[math.random(1, #stingers)]
 				end
